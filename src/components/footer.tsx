@@ -16,16 +16,16 @@ export function Footer() {
         <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-3">
           <div>
             <h3 className="mb-3 font-heading font-semibold text-sm">
-              🌍 WorldExplorer
+              🌍 ExploradorMundial
             </h3>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              Explore every country in the world. Population, languages,
-              currencies, and more — all in one place.
+              Explora todos los países del mundo. Población, idiomas,
+              monedas y más — todo en un solo lugar.
             </p>
           </div>
           <div>
             <h3 className="mb-3 font-heading font-semibold text-sm">
-              Regions
+              Regiones
             </h3>
             <ul className="space-y-1.5">
               {regions.map((r) => (
@@ -42,11 +42,11 @@ export function Footer() {
           </div>
           <div>
             <h3 className="mb-3 font-heading font-semibold text-sm">
-              About this project
+              Acerca de este proyecto
             </h3>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              A Programmatic SEO demo project built with Next.js. Data from
-              the{" "}
+              Un proyecto de SEO Programático construido con Next.js. Datos de
+              la{" "}
               <a
                 href="https://restcountries.com"
                 target="_blank"
@@ -60,7 +60,7 @@ export function Footer() {
           </div>
         </div>
         <div className="mt-8 border-t pt-6 text-center text-xs text-muted-foreground">
-          Built as a Programmatic SEO example &middot; {new Date().getFullYear()}
+          Ejemplo de SEO Programático &middot; {new Date().getFullYear()}
         </div>
       </div>
     </footer>

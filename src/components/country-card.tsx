@@ -9,7 +9,7 @@ export function CountryCard({ country }: { country: Country }) {
     <Link href={`/country/${country.slug}`} className="group">
       <Card className="h-full transition-all duration-200 hover:shadow-md hover:border-foreground/20">
         <CardContent className="flex gap-4 p-4">
-          <span className="text-4xl leading-none" role="img" aria-label={`Flag of ${country.name}`}>
+          <span className="text-4xl leading-none" role="img" aria-label={`Bandera de ${country.name}`}>
             {country.flag}
           </span>
           <div className="flex-1 min-w-0">

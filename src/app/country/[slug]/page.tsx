@@ -26,15 +26,15 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
   const country = await getCountryBySlug(slug);
-  if (!country) return { title: "Country Not Found" };
+  if (!country) return { title: "País No Encontrado" };
 
-  const description = `Discover ${country.name} — capital: ${country.capital}, population: ${formatPopulation(country.population)}, region: ${country.region}. Languages, currencies, geography and more.`;
+  const description = `Descubre ${country.name} — capital: ${country.capital}, población: ${formatPopulation(country.population)}, región: ${country.region}. Idiomas, monedas, geografía y más.`;
 
   return {
-    title: `${country.name} — Country Profile & Facts`,
+    title: `${country.name} — Perfil del País y Datos`,
     description,
     openGraph: {
-      title: `${country.name} — Country Profile & Facts`,
+      title: `${country.name} — Perfil del País y Datos`,
       description,
       type: "article",
     },
@@ -60,7 +60,7 @@ export default async function CountryPage({ params }: PageProps) {
     "@type": "Country",
     name: country.name,
     alternateName: country.officialName,
-    description: `${country.name} is a country in ${country.region} with a population of ${formatPopulation(country.population)}.`,
+    description: `${country.name} es un país en ${country.region} con una población de ${formatPopulation(country.population)}.`,
     geo: {
       "@type": "GeoCoordinates",
       latitude: country.latlng[0],
@@ -83,7 +83,7 @@ export default async function CountryPage({ params }: PageProps) {
         {/* Breadcrumbs */}
         <nav className="mb-6 flex items-center gap-1.5 text-sm text-muted-foreground">
           <Link href="/" className="hover:text-foreground transition-colors">
-            Home
+            Inicio
           </Link>
           <span>/</span>
           <Link
@@ -98,7 +98,7 @@ export default async function CountryPage({ params }: PageProps) {
 
         {/* Hero */}
         <div className="mb-8 flex items-start gap-4">
-          <span className="text-6xl leading-none" role="img" aria-label={`Flag of ${country.name}`}>
+          <span className="text-6xl leading-none" role="img" aria-label={`Bandera de ${country.name}`}>
             {country.flag}
           </span>
           <div>
@@ -115,19 +115,19 @@ export default async function CountryPage({ params }: PageProps) {
               {country.subregion && (
                 <Badge variant="outline">{country.subregion}</Badge>
               )}
-              {country.independent && <Badge>Independent</Badge>}
-              {country.unMember && <Badge variant="outline">UN Member</Badge>}
+              {country.independent && <Badge>Independiente</Badge>}
+              {country.unMember && <Badge variant="outline">Miembro ONU</Badge>}
             </div>
           </div>
         </div>
 
         {/* Stats grid */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <StatCard label="Population" value={formatPopulation(country.population)} />
-          <StatCard label="Area" value={`${formatArea(country.area)} km²`} />
+          <StatCard label="Población" value={formatPopulation(country.population)} />
+          <StatCard label="Área" value={`${formatArea(country.area)} km²`} />
           <StatCard label="Capital" value={country.capital} />
           <StatCard
-            label="Languages"
+            label="Idiomas"
             value={country.languages.length > 0 ? country.languages.join(", ") : "N/A"}
           />
         </div>
@@ -138,22 +138,22 @@ export default async function CountryPage({ params }: PageProps) {
         <div className="grid gap-6 md:grid-cols-2">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Geography</CardTitle>
+              <CardTitle className="text-base">Geografía</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
-              <DetailRow label="Region" value={country.region} />
-              <DetailRow label="Subregion" value={country.subregion || "N/A"} />
-              <DetailRow label="Continent" value={country.continent} />
+              <DetailRow label="Región" value={country.region} />
+              <DetailRow label="Subregión" value={country.subregion || "N/A"} />
+              <DetailRow label="Continente" value={country.continent} />
               <DetailRow
-                label="Coordinates"
+                label="Coordenadas"
                 value={`${country.latlng[0].toFixed(2)}°, ${country.latlng[1].toFixed(2)}°`}
               />
               <DetailRow
-                label="Landlocked"
-                value={country.landlocked ? "Yes" : "No"}
+                label="Sin litoral"
+                value={country.landlocked ? "Sí" : "No"}
               />
               <DetailRow
-                label="Timezones"
+                label="Zonas horarias"
                 value={country.timezones.join(", ")}
               />
               {country.maps && (
@@ -163,7 +163,7 @@ export default async function CountryPage({ params }: PageProps) {
                   rel="noopener noreferrer"
                   className="inline-block mt-2 text-sm underline underline-offset-2 hover:text-foreground text-muted-foreground"
                 >
-                  View on Google Maps &rarr;
+                  Ver en Google Maps &rarr;
                 </a>
               )}
             </CardContent>
@@ -171,11 +171,11 @@ export default async function CountryPage({ params }: PageProps) {
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Details</CardTitle>
+              <CardTitle className="text-base">Detalles</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
               <DetailRow
-                label="Currencies"
+                label="Monedas"
                 value={
                   country.currencies.length > 0
                     ? country.currencies.map((c) => `${c.name} (${c.symbol})`).join(", ")
@@ -183,15 +183,15 @@ export default async function CountryPage({ params }: PageProps) {
                 }
               />
               <DetailRow
-                label="Calling Code"
+                label="Código de llamada"
                 value={country.callingCode || "N/A"}
               />
               <DetailRow
-                label="Top Level Domain"
+                label="Dominio de nivel superior"
                 value={country.tld.join(", ") || "N/A"}
               />
               <DetailRow
-                label="Languages"
+                label="Idiomas"
                 value={country.languages.join(", ") || "N/A"}
               />
             </CardContent>
@@ -202,7 +202,7 @@ export default async function CountryPage({ params }: PageProps) {
         {borderCountries.length > 0 && (
           <section className="mt-10">
             <h2 className="font-heading text-xl font-semibold mb-4">
-              Bordering Countries
+              Países Fronterizos
             </h2>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {borderCountries.map((bc) => (
@@ -217,13 +217,13 @@ export default async function CountryPage({ params }: PageProps) {
           <section className="mt-10">
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-heading text-xl font-semibold">
-                More countries in {country.region}
+                Más países en {country.region}
               </h2>
               <Link
                 href={`/region/${slugify(country.region)}`}
                 className="text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
-                View all &rarr;
+                Ver todos &rarr;
               </Link>
             </div>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

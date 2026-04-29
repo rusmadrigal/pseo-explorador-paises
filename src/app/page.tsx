@@ -14,12 +14,12 @@ export default async function HomePage() {
     <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-10">
       <section className="mb-10">
         <h1 className="font-heading text-3xl font-bold tracking-tight sm:text-4xl">
-          Explore Every Country in the World
+          Explora Todos los Países del Mundo
         </h1>
         <p className="mt-2 max-w-2xl text-muted-foreground">
-          Discover detailed profiles for {countries.length} countries —
-          population data, languages spoken, currencies, geography, and much
-          more. Browse by region or search for any country.
+          Descubre perfiles detallados de {countries.length} países —
+          datos de población, idiomas hablados, monedas, geografía y mucho
+          más. Navega por región o busca cualquier país.
         </p>
         <div className="mt-4 flex flex-wrap gap-2">
           {regions.map((region) => (

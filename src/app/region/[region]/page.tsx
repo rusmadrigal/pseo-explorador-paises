@@ -24,13 +24,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const regions = await getRegions();
   const regionName = regions.find((r) => slugify(r) === region);
 
-  if (!regionName) return { title: "Region Not Found" };
+  if (!regionName) return { title: "Región No Encontrada" };
 
   const countries = await getCountriesByRegion(region);
 
   return {
-    title: `Countries in ${regionName} — ${countries.length} Nations`,
-    description: `Explore all ${countries.length} countries in ${regionName}. Find population data, capitals, languages, and facts for every nation in the ${regionName} region.`,
+    title: `Países en ${regionName} — ${countries.length} Naciones`,
+    description: `Explora los ${countries.length} países de ${regionName}. Datos de población, capitales, idiomas y datos de cada nación en la región de ${regionName}.`,
     alternates: {
       canonical: `/region/${region}`,
     },
@@ -55,8 +55,8 @@ export default async function RegionPage({ params }: PageProps) {
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "ItemList",
-    name: `Countries in ${regionName}`,
-    description: `All ${countries.length} countries in the ${regionName} region.`,
+    name: `Países en ${regionName}`,
+    description: `Los ${countries.length} países de la región de ${regionName}.`,
     numberOfItems: countries.length,
     itemListElement: countries.map((c, i) => ({
       "@type": "ListItem",
@@ -77,19 +77,19 @@ export default async function RegionPage({ params }: PageProps) {
         {/* Breadcrumbs */}
         <nav className="mb-6 flex items-center gap-1.5 text-sm text-muted-foreground">
           <Link href="/" className="hover:text-foreground transition-colors">
-            Home
+            Inicio
           </Link>
           <span>/</span>
           <span className="text-foreground">{regionName}</span>
         </nav>
 
         <h1 className="font-heading text-3xl font-bold tracking-tight sm:text-4xl">
-          Countries in {regionName}
+          Países en {regionName}
         </h1>
         <p className="mt-2 max-w-2xl text-muted-foreground">
-          Explore all {countries.length} countries in {regionName} — with a
-          combined population of {formatPopulation(totalPopulation)} across{" "}
-          {new Intl.NumberFormat("en-US").format(totalArea)} km².
+          Explora los {countries.length} países de {regionName} — con una
+          población combinada de {formatPopulation(totalPopulation)} en{" "}
+          {new Intl.NumberFormat("es-ES").format(totalArea)} km².
         </p>
 
         {/* Region navigation */}

@@ -172,7 +172,7 @@ export function formatPopulation(pop: number): string {
 }
 
 export function formatArea(area: number): string {
-  return new Intl.NumberFormat("en-US").format(area);
+  return new Intl.NumberFormat("es-ES").format(area);
 }
 
 export { slugify };

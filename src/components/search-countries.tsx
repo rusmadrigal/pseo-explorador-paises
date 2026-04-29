@@ -31,7 +31,7 @@ export function SearchCountries({ countries, regions }: SearchCountriesProps) {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <Input
           type="search"
-          placeholder="Search countries or capitals..."
+          placeholder="Buscar países o capitales..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           className="max-w-sm"
@@ -42,7 +42,7 @@ export function SearchCountries({ countries, regions }: SearchCountriesProps) {
             className="cursor-pointer"
             onClick={() => setActiveRegion(null)}
           >
-            All ({countries.length})
+            Todos ({countries.length})
           </Badge>
           {regions.map((region) => (
             <Badge
@@ -60,7 +60,7 @@ export function SearchCountries({ countries, regions }: SearchCountriesProps) {
       </div>
 
       <p className="mt-4 text-sm text-muted-foreground">
-        {filtered.length} {filtered.length === 1 ? "country" : "countries"} found
+        {filtered.length} {filtered.length === 1 ? "país" : "países"} encontrados
       </p>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -71,7 +71,7 @@ export function SearchCountries({ countries, regions }: SearchCountriesProps) {
 
       {filtered.length === 0 && (
         <p className="mt-12 text-center text-muted-foreground">
-          No countries match your search. Try a different term.
+          No se encontraron países. Intenta con otro término.
         </p>
       )}
     </div>

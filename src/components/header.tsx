@@ -6,14 +6,14 @@ export function Header() {
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
         <Link href="/" className="flex items-center gap-2 font-heading font-bold text-lg">
           <span className="text-xl">🌍</span>
-          <span>WorldExplorer</span>
+          <span>ExploradorMundial</span>
         </Link>
         <nav className="flex items-center gap-4 text-sm text-muted-foreground">
           <Link href="/" className="transition-colors hover:text-foreground">
-            Countries
+            Países
           </Link>
           <Link href="/region/africa" className="transition-colors hover:text-foreground">
-            Regions
+            Regiones
           </Link>
         </nav>
       </div>
