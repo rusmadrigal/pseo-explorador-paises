@@ -1,36 +1,83 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Curso de SEO Programático (pSEO) con Next.js
 
-## Getting Started
+Este repositorio contiene el código fuente del curso de **SEO Programático (pSEO)** impartido por **Rus Madrigal**.
 
-First, run the development server:
+El proyecto genera automáticamente más de 250 páginas optimizadas para motores de búsqueda — una por cada país del mundo — a partir de una sola fuente de datos (REST Countries API), demostrando en la práctica cómo funciona el SEO programático.
+
+## Video del curso
+
+Puedes seguir el curso completo en YouTube:
+
+[Ver la playlist del curso en YouTube](https://www.youtube.com/watch?v=8YnA_El17m4&list=PLAK1ErK60OT8gtXldWxfQwnkL9jhjp1Ng)
+
+## ¿Qué es el SEO programático?
+
+El SEO programático (pSEO) es una estrategia que consiste en generar cientos o miles de páginas optimizadas a partir de datos estructurados y plantillas, en lugar de crear cada página manualmente. Esto permite escalar el contenido de un sitio web de forma eficiente y aparecer en resultados de búsqueda para una gran variedad de consultas.
+
+## ¿Qué se construye en este curso?
+
+**WorldExplorer** — una aplicación web que genera páginas individuales para cada país del mundo con:
+
+- Datos de población, capital, idiomas y monedas
+- Información geográfica (coordenadas, zona horaria, países fronterizos)
+- Navegación por regiones y subregiones
+- Búsqueda instantánea de países
+
+## Temas de pSEO cubiertos
+
+- Generación estática de páginas con `generateStaticParams`
+- Meta tags dinámicos por página (`generateMetadata`)
+- Datos estructurados con Schema.org (JSON-LD)
+- Sitemap dinámico (`sitemap.ts`)
+- Archivo `robots.txt` programático
+- URLs canónicas
+- Open Graph tags
+- Interlinking entre páginas (países fronterizos, misma región)
+- Breadcrumbs para estructura de navegación
+
+## Stack tecnológico
+
+- **Next.js 16** — App Router con React Server Components
+- **React 19**
+- **TypeScript**
+- **Tailwind CSS 4**
+- **shadcn/ui** — componentes de interfaz
+- **REST Countries API** — fuente de datos
+
+## Instalación
 
 ```bash
+git clone https://github.com/tu-usuario/pseo-explorador-paises.git
+cd pseo-explorador-paises
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+La aplicación estará disponible en `http://localhost:3000`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Estructura del proyecto
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+src/
+├── app/
+│   ├── country/[slug]/   # Página individual de cada país
+│   ├── region/[region]/  # Página por región
+│   ├── layout.tsx        # Layout principal
+│   ├── page.tsx          # Página de inicio
+│   ├── not-found.tsx     # Página 404
+│   ├── sitemap.ts        # Sitemap dinámico
+│   └── robots.ts         # Robots.txt programático
+├── components/
+│   ├── ui/               # Componentes shadcn/ui
+│   ├── country-card.tsx  # Tarjeta de país
+│   ├── header.tsx        # Encabezado
+│   ├── footer.tsx        # Pie de página
+│   └── search-countries.tsx # Búsqueda
+└── lib/
+    ├── countries.ts      # Lógica de datos y API
+    └── utils.ts          # Utilidades
+```
 
-## Learn More
+## Licencia
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Este proyecto es material educativo del curso de pSEO de Rus Madrigal.
