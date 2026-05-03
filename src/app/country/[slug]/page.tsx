@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { ReactNode } from "react";
 import {
   getAllCountries,
   getCountryBySlug,
@@ -113,7 +114,9 @@ export default async function CountryPage({ params }: PageProps) {
                 <Badge variant="secondary">{country.region}</Badge>
               </Link>
               {country.subregion && (
-                <Badge variant="outline">{country.subregion}</Badge>
+                <Link href={`/paises/subregion/${slugify(country.subregion)}`}>
+                  <Badge variant="outline">{country.subregion}</Badge>
+                </Link>
               )}
               {country.independent && <Badge>Independiente</Badge>}
               {country.unMember && <Badge variant="outline">Miembro ONU</Badge>}
@@ -141,9 +144,43 @@ export default async function CountryPage({ params }: PageProps) {
               <CardTitle className="text-base">Geografía</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
-              <DetailRow label="Región" value={country.region} />
-              <DetailRow label="Subregión" value={country.subregion || "N/A"} />
-              <DetailRow label="Continente" value={country.continent} />
+              <DetailRow
+                label="Región"
+                value={
+                  <Link
+                    href={`/region/${slugify(country.region)}`}
+                    className="underline underline-offset-2 hover:text-foreground"
+                  >
+                    {country.region}
+                  </Link>
+                }
+              />
+              <DetailRow
+                label="Subregión"
+                value={
+                  country.subregion ? (
+                    <Link
+                      href={`/paises/subregion/${slugify(country.subregion)}`}
+                      className="underline underline-offset-2 hover:text-foreground"
+                    >
+                      {country.subregion}
+                    </Link>
+                  ) : (
+                    "N/A"
+                  )
+                }
+              />
+              <DetailRow
+                label="Continente"
+                value={
+                  <Link
+                    href={`/paises/continente/${slugify(country.continent)}`}
+                    className="underline underline-offset-2 hover:text-foreground"
+                  >
+                    {country.continent}
+                  </Link>
+                }
+              />
               <DetailRow
                 label="Coordenadas"
                 value={`${country.latlng[0].toFixed(2)}°, ${country.latlng[1].toFixed(2)}°`}
@@ -154,7 +191,18 @@ export default async function CountryPage({ params }: PageProps) {
               />
               <DetailRow
                 label="Zonas horarias"
-                value={country.timezones.join(", ")}
+                value={
+                  country.timezones.length > 0 ? (
+                    <GroupedLinkList
+                      links={country.timezones.map((timezone) => ({
+                        href: `/paises/zona-horaria/${slugify(timezone)}`,
+                        label: timezone,
+                      }))}
+                    />
+                  ) : (
+                    "N/A"
+                  )
+                }
               />
               {country.maps && (
                 <a
@@ -178,7 +226,14 @@ export default async function CountryPage({ params }: PageProps) {
                 label="Monedas"
                 value={
                   country.currencies.length > 0
-                    ? country.currencies.map((c) => `${c.name} (${c.symbol})`).join(", ")
+                    ? (
+                      <GroupedLinkList
+                        links={country.currencies.map((currency) => ({
+                          href: `/paises/moneda/${slugify(currency.name)}`,
+                          label: `${currency.name} (${currency.symbol || "N/A"})`,
+                        }))}
+                      />
+                    )
                     : "N/A"
                 }
               />
@@ -192,7 +247,18 @@ export default async function CountryPage({ params }: PageProps) {
               />
               <DetailRow
                 label="Idiomas"
-                value={country.languages.join(", ") || "N/A"}
+                value={
+                  country.languages.length > 0 ? (
+                    <GroupedLinkList
+                      links={country.languages.map((language) => ({
+                        href: `/paises/idioma/${slugify(language)}`,
+                        label: language,
+                      }))}
+                    />
+                  ) : (
+                    "N/A"
+                  )
+                }
               />
             </CardContent>
           </Card>
@@ -249,7 +315,23 @@ function StatCard({ label, value }: { label: string; value: string }) {
   );
 }
 
-function DetailRow({ label, value }: { label: string; value: string }) {
+function GroupedLinkList({ links }: { links: { href: string; label: string }[] }) {
+  return (
+    <span className="inline-flex flex-wrap justify-end gap-x-1.5 gap-y-1">
+      {links.map((link) => (
+        <Link
+          key={`${link.href}-${link.label}`}
+          href={link.href}
+          className="underline underline-offset-2 hover:text-foreground"
+        >
+          {link.label}
+        </Link>
+      ))}
+    </span>
+  );
+}
+
+function DetailRow({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div className="flex justify-between gap-4">
       <span className="text-muted-foreground shrink-0">{label}</span>

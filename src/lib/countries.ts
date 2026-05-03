@@ -25,6 +25,13 @@ export interface Country {
   latlng: [number, number];
 }
 
+export type CountryGroupType =
+  | "idioma"
+  | "moneda"
+  | "subregion"
+  | "continente"
+  | "zona-horaria";
+
 const API_BASE = "https://restcountries.com/v3.1/all";
 const FIELDS_1 = "name,capital,region,subregion,population,area,languages,currencies,timezones,flag";
 const FIELDS_2 = "name,flags,coatOfArms,maps,borders,tld,idd,independent,unMember,landlocked";
@@ -162,6 +169,66 @@ export async function getBorderCountries(country: Country): Promise<Country[]> {
   );
 
   return allCountries.filter((c) => borderSlugs.has(c.slug));
+}
+
+function uniqueSorted(values: string[]): string[] {
+  return Array.from(new Set(values.filter(Boolean))).sort((a, b) => a.localeCompare(b));
+}
+
+export async function getGroupValues(type: CountryGroupType): Promise<string[]> {
+  const countries = await getAllCountries();
+
+  switch (type) {
+    case "idioma":
+      return uniqueSorted(countries.flatMap((c) => c.languages));
+    case "moneda":
+      return uniqueSorted(countries.flatMap((c) => c.currencies.map((currency) => currency.name)));
+    case "subregion":
+      return uniqueSorted(countries.map((c) => c.subregion));
+    case "continente":
+      return uniqueSorted(countries.map((c) => c.continent));
+    case "zona-horaria":
+      return uniqueSorted(countries.flatMap((c) => c.timezones));
+    default:
+      return [];
+  }
+}
+
+export async function getCountriesByGroup(
+  type: CountryGroupType,
+  valueSlug: string
+): Promise<{ value: string; countries: Country[] } | undefined> {
+  const countries = await getAllCountries();
+  const values = await getGroupValues(type);
+  const matchedValue = values.find((value) => slugify(value) === valueSlug);
+
+  if (!matchedValue) return undefined;
+
+  let matchedCountries: Country[] = [];
+  switch (type) {
+    case "idioma":
+      matchedCountries = countries.filter((c) => c.languages.some((language) => language === matchedValue));
+      break;
+    case "moneda":
+      matchedCountries = countries.filter((c) =>
+        c.currencies.some((currency) => currency.name === matchedValue)
+      );
+      break;
+    case "subregion":
+      matchedCountries = countries.filter((c) => c.subregion === matchedValue);
+      break;
+    case "continente":
+      matchedCountries = countries.filter((c) => c.continent === matchedValue);
+      break;
+    case "zona-horaria":
+      matchedCountries = countries.filter((c) => c.timezones.some((timezone) => timezone === matchedValue));
+      break;
+  }
+
+  return {
+    value: matchedValue,
+    countries: matchedCountries,
+  };
 }
 
 export function formatPopulation(pop: number): string {
