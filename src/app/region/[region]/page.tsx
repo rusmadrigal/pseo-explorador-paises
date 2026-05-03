@@ -107,13 +107,28 @@ export default async function RegionPage({ params }: PageProps) {
         {subregions.length > 1 &&
           subregions.map((sub) => {
             const subCountries = countries.filter((c) => c.subregion === sub);
+            const isSouthAmericaLanding = region === "americas" && sub === "South America";
             return (
               <section key={sub} className="mt-10">
                 <h2 className="font-heading text-xl font-semibold mb-4">
-                  {sub}{" "}
-                  <span className="text-muted-foreground font-normal text-base">
-                    ({subCountries.length})
-                  </span>
+                  {isSouthAmericaLanding ? (
+                    <Link
+                      href="/paises/sudamerica"
+                      className="hover:underline underline-offset-4"
+                    >
+                      {sub}{" "}
+                      <span className="text-muted-foreground font-normal text-base">
+                        ({subCountries.length})
+                      </span>
+                    </Link>
+                  ) : (
+                    <>
+                      {sub}{" "}
+                      <span className="text-muted-foreground font-normal text-base">
+                        ({subCountries.length})
+                      </span>
+                    </>
+                  )}
                 </h2>
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                   {subCountries.map((c) => (
