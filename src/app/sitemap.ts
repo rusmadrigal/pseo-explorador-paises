@@ -1,5 +1,19 @@
 import { MetadataRoute } from "next";
-import { getAllCountries, getRegions, slugify } from "@/lib/countries";
+import {
+  CountryGroupType,
+  getAllCountries,
+  getGroupValues,
+  getRegions,
+  slugify,
+} from "@/lib/countries";
+
+const GROUP_TYPES: CountryGroupType[] = [
+  "idioma",
+  "moneda",
+  "subregion",
+  "continente",
+  "zona-horaria",
+];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl =
@@ -8,12 +22,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const countries = await getAllCountries();
   const regions = await getRegions();
 
-  const countryPages: MetadataRoute.Sitemap = countries.map((c) => ({
-    url: `${baseUrl}/country/${c.slug}`,
-    lastModified: new Date(),
-    changeFrequency: "monthly",
-    priority: 0.8,
-  }));
+  const home: MetadataRoute.Sitemap = [
+    {
+      url: baseUrl,
+      lastModified: new Date(),
+      changeFrequency: "weekly",
+      priority: 1.0,
+    },
+  ];
 
   const regionPages: MetadataRoute.Sitemap = regions.map((r) => ({
     url: `${baseUrl}/region/${slugify(r)}`,
@@ -22,14 +38,49 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }));
 
-  return [
+  const countryPages: MetadataRoute.Sitemap = countries.map((c) => ({
+    url: `${baseUrl}/country/${c.slug}`,
+    lastModified: new Date(),
+    changeFrequency: "monthly",
+    priority: 0.8,
+  }));
+
+  const categoryTypeHubs: MetadataRoute.Sitemap = GROUP_TYPES.map((tipo) => ({
+    url: `${baseUrl}/paises/${tipo}`,
+    lastModified: new Date(),
+    changeFrequency: "monthly",
+    priority: 0.6,
+  }));
+
+  const categoryPages: MetadataRoute.Sitemap = (
+    await Promise.all(
+      GROUP_TYPES.map(async (tipo) => {
+        const values = await getGroupValues(tipo);
+        return values.map((value) => ({
+          url: `${baseUrl}/paises/${tipo}/${slugify(value)}`,
+          lastModified: new Date(),
+          changeFrequency: "monthly" as const,
+          priority: 0.65,
+        }));
+      })
+    )
+  ).flat();
+
+  const landingPages: MetadataRoute.Sitemap = [
     {
-      url: baseUrl,
+      url: `${baseUrl}/paises/sudamerica`,
       lastModified: new Date(),
-      changeFrequency: "weekly",
-      priority: 1.0,
+      changeFrequency: "monthly",
+      priority: 0.75,
     },
+  ];
+
+  return [
+    ...home,
     ...regionPages,
+    ...categoryTypeHubs,
+    ...landingPages,
+    ...categoryPages,
     ...countryPages,
   ];
 }

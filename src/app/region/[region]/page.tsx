@@ -8,7 +8,9 @@ import {
   slugify,
 } from "@/lib/countries";
 import { CountryCard } from "@/components/country-card";
+import { Breadcrumbs } from "@/components/breadcrumbs";
 import { Badge } from "@/components/ui/badge";
+import { buildRegionBreadcrumbs, getRegionIntro } from "@/lib/seo";
 
 interface PageProps {
   params: Promise<{ region: string }>;
@@ -34,6 +36,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     alternates: {
       canonical: `/region/${region}`,
     },
+    openGraph: {
+      title: `Países en ${regionName}`,
+      description: `Hub regional con ${countries.length} países en ${regionName}.`,
+      type: "website",
+      url: `/region/${region}`,
+    },
   };
 }
 
@@ -52,11 +60,15 @@ export default async function RegionPage({ params }: PageProps) {
     new Set(countries.map((c) => c.subregion).filter(Boolean))
   ).sort();
 
+  const continents = Array.from(
+    new Set(countries.map((c) => c.continent).filter(Boolean))
+  ).sort();
+
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "ItemList",
     name: `Países en ${regionName}`,
-    description: `Los ${countries.length} países de la región de ${regionName}.`,
+    description: getRegionIntro(regionName, countries.length, totalPopulation, totalArea),
     numberOfItems: countries.length,
     itemListElement: countries.map((c, i) => ({
       "@type": "ListItem",
@@ -74,22 +86,16 @@ export default async function RegionPage({ params }: PageProps) {
       />
 
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-10">
-        {/* Breadcrumbs */}
-        <nav className="mb-6 flex items-center gap-1.5 text-sm text-muted-foreground">
-          <Link href="/" className="hover:text-foreground transition-colors">
-            Inicio
-          </Link>
-          <span>/</span>
-          <span className="text-foreground">{regionName}</span>
-        </nav>
+        <Breadcrumbs items={buildRegionBreadcrumbs(regionName)} />
 
+        <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          Hub regional
+        </p>
         <h1 className="font-heading text-3xl font-bold tracking-tight sm:text-4xl">
           Países en {regionName}
         </h1>
         <p className="mt-2 max-w-2xl text-muted-foreground">
-          Explora los {countries.length} países de {regionName} — con una
-          población combinada de {formatPopulation(totalPopulation)} en{" "}
-          {new Intl.NumberFormat("es-ES").format(totalArea)} km².
+          {getRegionIntro(regionName, countries.length, totalPopulation, totalArea)}
         </p>
 
         {/* Region navigation */}
@@ -103,33 +109,64 @@ export default async function RegionPage({ params }: PageProps) {
           ))}
         </div>
 
-        {/* Sub-regions */}
-        {subregions.length > 1 &&
+        {/* Related categories */}
+        <section className="mt-8 rounded-lg border bg-muted/30 p-4">
+          <h2 className="font-heading text-sm font-semibold">
+            Explorar por categoría
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Agrupaciones programáticas relacionadas con esta región.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Link href="/paises/subregion">
+              <Badge variant="secondary">Subregiones</Badge>
+            </Link>
+            <Link href="/paises/continente">
+              <Badge variant="secondary">Continentes</Badge>
+            </Link>
+            <Link href="/paises/idioma">
+              <Badge variant="secondary">Idiomas</Badge>
+            </Link>
+            {continents.map((continent) => (
+              <Link
+                key={continent}
+                href={`/paises/continente/${slugify(continent)}`}
+              >
+                <Badge variant="outline">{continent}</Badge>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        {/* Sub-regions → category pages */}
+        {subregions.length > 1 ? (
           subregions.map((sub) => {
             const subCountries = countries.filter((c) => c.subregion === sub);
-            const isSouthAmericaLanding = region === "americas" && sub === "South America";
+            const isSouthAmerica =
+              region === "americas" && sub === "South America";
+            const subHref = `/paises/subregion/${slugify(sub)}`;
+
             return (
               <section key={sub} className="mt-10">
-                <h2 className="font-heading text-xl font-semibold mb-4">
-                  {isSouthAmericaLanding ? (
+                <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
+                  <h2 className="font-heading text-xl font-semibold">
                     <Link
-                      href="/paises/sudamerica"
+                      href={isSouthAmerica ? "/paises/sudamerica" : subHref}
                       className="hover:underline underline-offset-4"
                     >
-                      {sub}{" "}
-                      <span className="text-muted-foreground font-normal text-base">
-                        ({subCountries.length})
-                      </span>
+                      {isSouthAmerica ? "Sudamérica" : sub}
                     </Link>
-                  ) : (
-                    <>
-                      {sub}{" "}
-                      <span className="text-muted-foreground font-normal text-base">
-                        ({subCountries.length})
-                      </span>
-                    </>
-                  )}
-                </h2>
+                    <span className="ml-2 text-base font-normal text-muted-foreground">
+                      ({subCountries.length} países)
+                    </span>
+                  </h2>
+                  <Link
+                    href={subHref}
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Ver categoría &rarr;
+                  </Link>
+                </div>
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                   {subCountries.map((c) => (
                     <CountryCard key={c.slug} country={c} />
@@ -137,9 +174,8 @@ export default async function RegionPage({ params }: PageProps) {
                 </div>
               </section>
             );
-          })}
-
-        {subregions.length <= 1 && (
+          })
+        ) : (
           <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {countries.map((c) => (
               <CountryCard key={c.slug} country={c} />

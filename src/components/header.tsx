@@ -10,10 +10,13 @@ export function Header() {
         </Link>
         <nav className="flex items-center gap-4 text-sm text-muted-foreground">
           <Link href="/" className="transition-colors hover:text-foreground">
-            Países
+            Inicio
           </Link>
           <Link href="/region/africa" className="transition-colors hover:text-foreground">
             Regiones
+          </Link>
+          <Link href="/paises/idioma" className="transition-colors hover:text-foreground">
+            Categorías
           </Link>
         </nav>
       </div>

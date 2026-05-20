@@ -10,6 +10,12 @@ import {
   formatArea,
   slugify,
 } from "@/lib/countries";
+import {
+  buildCountryBreadcrumbs,
+  getCountryIntro,
+  getCountryCategoryLinks,
+} from "@/lib/seo";
+import { Breadcrumbs } from "@/components/breadcrumbs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -29,7 +35,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const country = await getCountryBySlug(slug);
   if (!country) return { title: "País No Encontrado" };
 
-  const description = `Descubre ${country.name} — capital: ${country.capital}, población: ${formatPopulation(country.population)}, región: ${country.region}. Idiomas, monedas, geografía y más.`;
+  const description = getCountryIntro(country);
 
   return {
     title: `${country.name} — Perfil del País y Datos`,
@@ -56,12 +62,14 @@ export default async function CountryPage({ params }: PageProps) {
     .filter((c) => c.region === country.region && c.slug !== country.slug)
     .slice(0, 6);
 
+  const categoryLinks = getCountryCategoryLinks(country);
+
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Country",
     name: country.name,
     alternateName: country.officialName,
-    description: `${country.name} es un país en ${country.region} con una población de ${formatPopulation(country.population)}.`,
+    description: getCountryIntro(country),
     geo: {
       "@type": "GeoCoordinates",
       latitude: country.latlng[0],
@@ -81,33 +89,28 @@ export default async function CountryPage({ params }: PageProps) {
       />
 
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-10">
-        {/* Breadcrumbs */}
-        <nav className="mb-6 flex items-center gap-1.5 text-sm text-muted-foreground">
-          <Link href="/" className="hover:text-foreground transition-colors">
-            Inicio
-          </Link>
-          <span>/</span>
-          <Link
-            href={`/region/${slugify(country.region)}`}
-            className="hover:text-foreground transition-colors"
-          >
-            {country.region}
-          </Link>
-          <span>/</span>
-          <span className="text-foreground">{country.name}</span>
-        </nav>
+        <Breadcrumbs items={buildCountryBreadcrumbs(country)} />
+
+        <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          Página de país
+        </p>
 
         {/* Hero */}
-        <div className="mb-8 flex items-start gap-4">
-          <span className="text-6xl leading-none" role="img" aria-label={`Bandera de ${country.name}`}>
+        <div className="mb-4 flex items-start gap-4">
+          <span
+            className="text-6xl leading-none"
+            role="img"
+            aria-label={`Bandera de ${country.name}`}
+          >
             {country.flag}
           </span>
           <div>
             <h1 className="font-heading text-3xl font-bold tracking-tight sm:text-4xl">
               {country.name}
             </h1>
-            <p className="mt-1 text-muted-foreground">
-              {country.officialName}
+            <p className="mt-1 text-muted-foreground">{country.officialName}</p>
+            <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+              {getCountryIntro(country)}
             </p>
             <div className="mt-2 flex flex-wrap gap-1.5">
               <Link href={`/region/${slugify(country.region)}`}>
@@ -124,6 +127,22 @@ export default async function CountryPage({ params }: PageProps) {
           </div>
         </div>
 
+        {/* Category links — internal linking to category pages */}
+        {categoryLinks.length > 0 && (
+          <section className="mb-8 rounded-lg border bg-muted/30 p-4">
+            <h2 className="font-heading text-sm font-semibold">
+              Categorías relacionadas
+            </h2>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {categoryLinks.map((link) => (
+                <Link key={link.href} href={link.href}>
+                  <Badge variant="outline">{link.label}</Badge>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
+
         {/* Stats grid */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard label="Población" value={formatPopulation(country.population)} />
@@ -131,7 +150,9 @@ export default async function CountryPage({ params }: PageProps) {
           <StatCard label="Capital" value={country.capital} />
           <StatCard
             label="Idiomas"
-            value={country.languages.length > 0 ? country.languages.join(", ") : "N/A"}
+            value={
+              country.languages.length > 0 ? country.languages.join(", ") : "N/A"
+            }
           />
         </div>
 
@@ -225,16 +246,16 @@ export default async function CountryPage({ params }: PageProps) {
               <DetailRow
                 label="Monedas"
                 value={
-                  country.currencies.length > 0
-                    ? (
-                      <GroupedLinkList
-                        links={country.currencies.map((currency) => ({
-                          href: `/paises/moneda/${slugify(currency.name)}`,
-                          label: `${currency.name} (${currency.symbol || "N/A"})`,
-                        }))}
-                      />
-                    )
-                    : "N/A"
+                  country.currencies.length > 0 ? (
+                    <GroupedLinkList
+                      links={country.currencies.map((currency) => ({
+                        href: `/paises/moneda/${slugify(currency.name)}`,
+                        label: `${currency.name} (${currency.symbol || "N/A"})`,
+                      }))}
+                    />
+                  ) : (
+                    "N/A"
+                  )
                 }
               />
               <DetailRow
@@ -264,11 +285,10 @@ export default async function CountryPage({ params }: PageProps) {
           </Card>
         </div>
 
-        {/* Border countries — internal linking */}
         {borderCountries.length > 0 && (
           <section className="mt-10">
             <h2 className="font-heading text-xl font-semibold mb-4">
-              Países Fronterizos
+              Países fronterizos
             </h2>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {borderCountries.map((bc) => (
@@ -278,7 +298,6 @@ export default async function CountryPage({ params }: PageProps) {
           </section>
         )}
 
-        {/* More from this region — internal linking */}
         {regionCountries.length > 0 && (
           <section className="mt-10">
             <div className="flex items-center justify-between mb-4">
@@ -289,7 +308,7 @@ export default async function CountryPage({ params }: PageProps) {
                 href={`/region/${slugify(country.region)}`}
                 className="text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
-                Ver todos &rarr;
+                Ver hub regional &rarr;
               </Link>
             </div>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

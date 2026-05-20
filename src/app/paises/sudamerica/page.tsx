@@ -1,7 +1,10 @@
 import { Metadata } from "next";
 import Link from "next/link";
 import { CountryCard } from "@/components/country-card";
-import { formatPopulation, getCountriesByRegion } from "@/lib/countries";
+import { Breadcrumbs } from "@/components/breadcrumbs";
+import { Badge } from "@/components/ui/badge";
+import { formatPopulation, getCountriesByRegion, slugify } from "@/lib/countries";
+import { buildSouthAmericaBreadcrumbs } from "@/lib/seo";
 
 export const metadata: Metadata = {
   title: "Países de Sudamérica — Capital, Población y Datos",
@@ -21,14 +24,21 @@ export const metadata: Metadata = {
 
 export default async function SouthAmericaPage() {
   const americasCountries = await getCountriesByRegion("americas");
-  const countries = americasCountries.filter((country) => country.subregion === "South America");
-  const totalPopulation = countries.reduce((sum, country) => sum + country.population, 0);
+  const countries = americasCountries.filter(
+    (country) => country.subregion === "South America"
+  );
+  const totalPopulation = countries.reduce(
+    (sum, country) => sum + country.population,
+    0
+  );
+
+  const intro = `Sudamérica reúne ${countries.length} países con ${formatPopulation(totalPopulation)} de población combinada. Esta landing complementa el hub de Americas y la categoría por subregión, enlazando hacia cada perfil de país.`;
 
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "ItemList",
     name: "Países de Sudamérica",
-    description: `Listado de ${countries.length} países de la subregión de Sudamérica.`,
+    description: intro,
     numberOfItems: countries.length,
     itemListElement: countries.map((country, index) => ({
       "@type": "ListItem",
@@ -46,25 +56,24 @@ export default async function SouthAmericaPage() {
       />
 
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-10">
-        <nav className="mb-6 flex items-center gap-1.5 text-sm text-muted-foreground">
-          <Link href="/" className="hover:text-foreground transition-colors">
-            Inicio
-          </Link>
-          <span>/</span>
-          <Link href="/region/americas" className="hover:text-foreground transition-colors">
-            Americas
-          </Link>
-          <span>/</span>
-          <span className="text-foreground">Sudamérica</span>
-        </nav>
+        <Breadcrumbs items={buildSouthAmericaBreadcrumbs()} />
 
+        <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          Landing programática
+        </p>
         <h1 className="font-heading text-3xl font-bold tracking-tight sm:text-4xl">
           Países de Sudamérica
         </h1>
-        <p className="mt-2 max-w-2xl text-muted-foreground">
-          Explora los {countries.length} países de Sudamérica, con una población combinada de{" "}
-          {formatPopulation(totalPopulation)}.
-        </p>
+        <p className="mt-2 max-w-2xl text-muted-foreground">{intro}</p>
+
+        <div className="mt-4 flex flex-wrap gap-2">
+          <Link href="/region/americas">
+            <Badge variant="secondary">Hub: Americas</Badge>
+          </Link>
+          <Link href={`/paises/subregion/${slugify("South America")}`}>
+            <Badge variant="outline">Categoría: South America</Badge>
+          </Link>
+        </div>
 
         <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {countries.map((country) => (

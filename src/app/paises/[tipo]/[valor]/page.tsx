@@ -2,6 +2,8 @@ import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { CountryCard } from "@/components/country-card";
+import { Breadcrumbs } from "@/components/breadcrumbs";
+import { Badge } from "@/components/ui/badge";
 import {
   CountryGroupType,
   formatPopulation,
@@ -9,27 +11,24 @@ import {
   getGroupValues,
   slugify,
 } from "@/lib/countries";
+import {
+  GROUP_LABELS,
+  GROUP_TYPE_PLURAL,
+  buildCategoryBreadcrumbs,
+  getCategoryIntro,
+  getPrimaryRegion,
+  isGroupType,
+} from "@/lib/seo";
 
 interface PageProps {
   params: Promise<{ tipo: string; valor: string }>;
 }
 
-const GROUP_LABELS: Record<CountryGroupType, string> = {
-  idioma: "idioma",
-  moneda: "moneda",
-  subregion: "subregión",
-  continente: "continente",
-  "zona-horaria": "zona horaria",
-};
-
-function isGroupType(value: string): value is CountryGroupType {
-  return value in GROUP_LABELS;
-}
+const GROUP_TYPES = Object.keys(GROUP_LABELS) as CountryGroupType[];
 
 export async function generateStaticParams() {
-  const groupTypes = Object.keys(GROUP_LABELS) as CountryGroupType[];
   const params = await Promise.all(
-    groupTypes.map(async (tipo) => {
+    GROUP_TYPES.map(async (tipo) => {
       const values = await getGroupValues(tipo);
       return values.map((valor) => ({
         tipo,
@@ -50,7 +49,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   const { value, countries } = groupResult;
   const groupLabel = GROUP_LABELS[tipo];
-  const description = `Explora ${countries.length} países agrupados por ${groupLabel}: ${value}.`;
+  const description = getCategoryIntro(tipo, value, countries.length, countries.reduce((s, c) => s + c.population, 0));
 
   return {
     title: `Países por ${groupLabel}: ${value}`,
@@ -77,12 +76,14 @@ export default async function CountriesByGroupPage({ params }: PageProps) {
   const { value, countries } = groupResult;
   const groupLabel = GROUP_LABELS[tipo];
   const totalPopulation = countries.reduce((sum, country) => sum + country.population, 0);
+  const primaryRegion = getPrimaryRegion(countries);
+  const intro = getCategoryIntro(tipo, value, countries.length, totalPopulation);
 
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "ItemList",
     name: `Países por ${groupLabel}: ${value}`,
-    description: `Listado de ${countries.length} países agrupados por ${groupLabel}: ${value}.`,
+    description: intro,
     numberOfItems: countries.length,
     itemListElement: countries.map((country, index) => ({
       "@type": "ListItem",
@@ -100,21 +101,31 @@ export default async function CountriesByGroupPage({ params }: PageProps) {
       />
 
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-10">
-        <nav className="mb-6 flex items-center gap-1.5 text-sm text-muted-foreground">
-          <Link href="/" className="hover:text-foreground transition-colors">
-            Inicio
-          </Link>
-          <span>/</span>
-          <span className="text-foreground">Países por {groupLabel}</span>
-        </nav>
+        <Breadcrumbs items={buildCategoryBreadcrumbs(tipo, value, countries)} />
 
+        <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          Página de categoría
+        </p>
         <h1 className="font-heading text-3xl font-bold tracking-tight sm:text-4xl">
           Países por {groupLabel}: {value}
         </h1>
-        <p className="mt-2 max-w-2xl text-muted-foreground">
-          Hay {countries.length} países en esta agrupación, con una población total de{" "}
-          {formatPopulation(totalPopulation)}.
-        </p>
+        <p className="mt-2 max-w-2xl text-muted-foreground">{intro}</p>
+
+        <div className="mt-4 flex flex-wrap gap-2">
+          <Link href={`/paises/${tipo}`}>
+            <Badge variant="secondary">Ver todas las {GROUP_TYPE_PLURAL[tipo]}</Badge>
+          </Link>
+          {primaryRegion && (
+            <Link href={`/region/${slugify(primaryRegion)}`}>
+              <Badge variant="outline">Hub: {primaryRegion}</Badge>
+            </Link>
+          )}
+          {tipo === "subregion" && value === "South America" && (
+            <Link href="/paises/sudamerica">
+              <Badge variant="outline">Landing Sudamérica</Badge>
+            </Link>
+          )}
+        </div>
 
         <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {countries.map((country) => (
