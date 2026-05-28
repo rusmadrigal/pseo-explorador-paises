@@ -231,6 +231,108 @@ export async function getCountriesByGroup(
   };
 }
 
+export async function getRegionBySlug(
+  regionSlug: string
+): Promise<string | undefined> {
+  const regions = await getRegions();
+  return regions.find((r) => slugify(r) === regionSlug);
+}
+
+export async function getCountriesByGroupInRegion(
+  regionSlug: string,
+  type: CountryGroupType,
+  valueSlug: string
+): Promise<{ value: string; countries: Country[]; regionName: string } | undefined> {
+  const regionName = await getRegionBySlug(regionSlug);
+  if (!regionName) return undefined;
+
+  const groupResult = await getCountriesByGroup(type, valueSlug);
+  if (!groupResult) return undefined;
+
+  const countries = groupResult.countries.filter(
+    (c) => slugify(c.region) === regionSlug
+  );
+  if (countries.length === 0) return undefined;
+
+  return {
+    value: groupResult.value,
+    countries,
+    regionName,
+  };
+}
+
+export async function getGroupValuesInRegion(
+  regionSlug: string,
+  type: CountryGroupType
+): Promise<string[]> {
+  const regionName = await getRegionBySlug(regionSlug);
+  if (!regionName) return [];
+
+  const countries = await getCountriesByRegion(regionSlug);
+  switch (type) {
+    case "idioma":
+      return uniqueSorted(countries.flatMap((c) => c.languages));
+    case "moneda":
+      return uniqueSorted(
+        countries.flatMap((c) => c.currencies.map((currency) => currency.name))
+      );
+    case "subregion":
+      return uniqueSorted(countries.map((c) => c.subregion));
+    case "continente":
+      return uniqueSorted(countries.map((c) => c.continent));
+    case "zona-horaria":
+      return uniqueSorted(countries.flatMap((c) => c.timezones));
+    default:
+      return [];
+  }
+}
+
+export interface CountryFacet {
+  tipo: CountryGroupType;
+  value: string;
+}
+
+export function getCountryFacets(country: Country): CountryFacet[] {
+  const facets: CountryFacet[] = [];
+
+  if (country.subregion) {
+    facets.push({ tipo: "subregion", value: country.subregion });
+  }
+  facets.push({ tipo: "continente", value: country.continent });
+  for (const language of country.languages) {
+    facets.push({ tipo: "idioma", value: language });
+  }
+  for (const currency of country.currencies) {
+    facets.push({ tipo: "moneda", value: currency.name });
+  }
+  for (const timezone of country.timezones) {
+    facets.push({ tipo: "zona-horaria", value: timezone });
+  }
+
+  return facets;
+}
+
+export function countryMatchesFacet(
+  country: Country,
+  tipo: CountryGroupType,
+  value: string
+): boolean {
+  switch (tipo) {
+    case "idioma":
+      return country.languages.includes(value);
+    case "moneda":
+      return country.currencies.some((c) => c.name === value);
+    case "subregion":
+      return country.subregion === value;
+    case "continente":
+      return country.continent === value;
+    case "zona-horaria":
+      return country.timezones.includes(value);
+    default:
+      return false;
+  }
+}
+
 export function formatPopulation(pop: number): string {
   if (pop >= 1_000_000_000) return `${(pop / 1_000_000_000).toFixed(1)}B`;
   if (pop >= 1_000_000) return `${(pop / 1_000_000).toFixed(1)}M`;

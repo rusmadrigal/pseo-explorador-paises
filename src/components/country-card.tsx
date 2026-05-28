@@ -3,10 +3,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import type { Country } from "@/lib/countries";
 import { formatPopulation } from "@/lib/countries";
+import { countryPath } from "@/lib/paths";
 
 export function CountryCard({ country }: { country: Country }) {
   return (
-    <Link href={`/country/${country.slug}`} className="group">
+    <Link href={countryPath(country)} className="group">
       <Card className="h-full transition-all duration-200 hover:shadow-md hover:border-foreground/20">
         <CardContent className="flex gap-4 p-4">
           <span className="text-4xl leading-none" role="img" aria-label={`Bandera de ${country.name}`}>

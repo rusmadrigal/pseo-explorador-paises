@@ -15,7 +15,7 @@ export function Header() {
           <Link href="/region/africa" className="transition-colors hover:text-foreground">
             Regiones
           </Link>
-          <Link href="/paises/idioma" className="transition-colors hover:text-foreground">
+          <Link href="/region/europe/idioma" className="transition-colors hover:text-foreground">
             Categorías
           </Link>
         </nav>

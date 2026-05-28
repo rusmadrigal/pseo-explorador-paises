@@ -11,6 +11,14 @@ import { CountryCard } from "@/components/country-card";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { Badge } from "@/components/ui/badge";
 import { buildRegionBreadcrumbs, getRegionIntro } from "@/lib/seo";
+import {
+  GROUP_TYPES,
+  regionCategoryHubPath,
+  regionCategoryPath,
+  regionPath,
+  southAmericaLandingPath,
+} from "@/lib/paths";
+import { GROUP_TYPE_PLURAL } from "@/lib/seo";
 
 interface PageProps {
   params: Promise<{ region: string }>;
@@ -32,15 +40,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   return {
     title: `Países en ${regionName} — ${countries.length} Naciones`,
-    description: `Explora los ${countries.length} países de ${regionName}. Datos de población, capitales, idiomas y datos de cada nación en la región de ${regionName}.`,
+    description: `Hub regional: ${countries.length} países en ${regionName}.`,
     alternates: {
-      canonical: `/region/${region}`,
-    },
-    openGraph: {
-      title: `Países en ${regionName}`,
-      description: `Hub regional con ${countries.length} países en ${regionName}.`,
-      type: "website",
-      url: `/region/${region}`,
+      canonical: regionPath(regionName),
     },
   };
 }
@@ -60,10 +62,6 @@ export default async function RegionPage({ params }: PageProps) {
     new Set(countries.map((c) => c.subregion).filter(Boolean))
   ).sort();
 
-  const continents = Array.from(
-    new Set(countries.map((c) => c.continent).filter(Boolean))
-  ).sort();
-
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "ItemList",
@@ -74,7 +72,7 @@ export default async function RegionPage({ params }: PageProps) {
       "@type": "ListItem",
       position: i + 1,
       name: c.name,
-      url: `/country/${c.slug}`,
+      url: `/region/${region}/${c.slug}`,
     })),
   };
 
@@ -98,10 +96,9 @@ export default async function RegionPage({ params }: PageProps) {
           {getRegionIntro(regionName, countries.length, totalPopulation, totalArea)}
         </p>
 
-        {/* Region navigation */}
         <div className="mt-4 flex flex-wrap gap-1.5">
           {regions.map((r) => (
-            <Link key={r} href={`/region/${slugify(r)}`}>
+            <Link key={r} href={regionPath(r)}>
               <Badge variant={r === regionName ? "default" : "outline"}>
                 {r}
               </Badge>
@@ -109,49 +106,32 @@ export default async function RegionPage({ params }: PageProps) {
           ))}
         </div>
 
-        {/* Related categories */}
         <section className="mt-8 rounded-lg border bg-muted/30 p-4">
           <h2 className="font-heading text-sm font-semibold">
-            Explorar por categoría
+            Categorías en {regionName}
           </h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Agrupaciones programáticas relacionadas con esta región.
-          </p>
           <div className="mt-3 flex flex-wrap gap-2">
-            <Link href="/paises/subregion">
-              <Badge variant="secondary">Subregiones</Badge>
-            </Link>
-            <Link href="/paises/continente">
-              <Badge variant="secondary">Continentes</Badge>
-            </Link>
-            <Link href="/paises/idioma">
-              <Badge variant="secondary">Idiomas</Badge>
-            </Link>
-            {continents.map((continent) => (
-              <Link
-                key={continent}
-                href={`/paises/continente/${slugify(continent)}`}
-              >
-                <Badge variant="outline">{continent}</Badge>
+            {GROUP_TYPES.map((tipo) => (
+              <Link key={tipo} href={regionCategoryHubPath(regionName, tipo)}>
+                <Badge variant="secondary">{GROUP_TYPE_PLURAL[tipo]}</Badge>
               </Link>
             ))}
           </div>
         </section>
 
-        {/* Sub-regions → category pages */}
         {subregions.length > 1 ? (
           subregions.map((sub) => {
             const subCountries = countries.filter((c) => c.subregion === sub);
             const isSouthAmerica =
               region === "americas" && sub === "South America";
-            const subHref = `/paises/subregion/${slugify(sub)}`;
+            const subHref = regionCategoryPath(regionName, "subregion", sub);
 
             return (
               <section key={sub} className="mt-10">
                 <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
                   <h2 className="font-heading text-xl font-semibold">
                     <Link
-                      href={isSouthAmerica ? "/paises/sudamerica" : subHref}
+                      href={isSouthAmerica ? southAmericaLandingPath() : subHref}
                       className="hover:underline underline-offset-4"
                     >
                       {isSouthAmerica ? "Sudamérica" : sub}

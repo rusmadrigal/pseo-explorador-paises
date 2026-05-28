@@ -1,19 +1,33 @@
 import { MetadataRoute } from "next";
 import {
-  CountryGroupType,
   getAllCountries,
-  getGroupValues,
+  getCountryFacets,
+  getGroupValuesInRegion,
   getRegions,
   slugify,
 } from "@/lib/countries";
+import {
+  GROUP_TYPES,
+  countryFacetPath,
+  countryPath,
+  regionCategoryHubPath,
+  regionCategoryPath,
+  regionPath,
+  southAmericaLandingPath,
+} from "@/lib/paths";
 
-const GROUP_TYPES: CountryGroupType[] = [
-  "idioma",
-  "moneda",
-  "subregion",
-  "continente",
-  "zona-horaria",
-];
+function entry(
+  baseUrl: string,
+  pathname: string,
+  priority: number
+): MetadataRoute.Sitemap[number] {
+  return {
+    url: `${baseUrl}${pathname}`,
+    lastModified: new Date(),
+    changeFrequency: "monthly" as const,
+    priority,
+  };
+}
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl =
@@ -22,65 +36,48 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const countries = await getAllCountries();
   const regions = await getRegions();
 
-  const home: MetadataRoute.Sitemap = [
+  const urls: MetadataRoute.Sitemap = [
     {
       url: baseUrl,
       lastModified: new Date(),
       changeFrequency: "weekly",
       priority: 1.0,
     },
+    ...regions.map((r) => entry(baseUrl, regionPath(r), 0.7)),
+    entry(baseUrl, southAmericaLandingPath(), 0.75),
+    ...countries.map((c) => entry(baseUrl, countryPath(c), 0.8)),
+    ...countries.flatMap((c) =>
+      getCountryFacets(c).map((facet) =>
+        entry(baseUrl, countryFacetPath(c, facet.tipo, facet.value), 0.75)
+      )
+    ),
+    ...regions.flatMap((regionName) =>
+      GROUP_TYPES.map((tipo) =>
+        entry(baseUrl, regionCategoryHubPath(regionName, tipo), 0.6)
+      )
+    ),
+    ...(
+      await Promise.all(
+        regions.map(async (regionName) => {
+          const regionSlug = slugify(regionName);
+          const byType = await Promise.all(
+            GROUP_TYPES.map(async (tipo) => {
+              const values = await getGroupValuesInRegion(regionSlug, tipo);
+              return values.map((value) =>
+                entry(baseUrl, regionCategoryPath(regionName, tipo, value), 0.65)
+              );
+            })
+          );
+          return byType.flat();
+        })
+      )
+    ).flat(),
   ];
 
-  const regionPages: MetadataRoute.Sitemap = regions.map((r) => ({
-    url: `${baseUrl}/region/${slugify(r)}`,
-    lastModified: new Date(),
-    changeFrequency: "monthly",
-    priority: 0.7,
-  }));
-
-  const countryPages: MetadataRoute.Sitemap = countries.map((c) => ({
-    url: `${baseUrl}/country/${c.slug}`,
-    lastModified: new Date(),
-    changeFrequency: "monthly",
-    priority: 0.8,
-  }));
-
-  const categoryTypeHubs: MetadataRoute.Sitemap = GROUP_TYPES.map((tipo) => ({
-    url: `${baseUrl}/paises/${tipo}`,
-    lastModified: new Date(),
-    changeFrequency: "monthly",
-    priority: 0.6,
-  }));
-
-  const categoryPages: MetadataRoute.Sitemap = (
-    await Promise.all(
-      GROUP_TYPES.map(async (tipo) => {
-        const values = await getGroupValues(tipo);
-        return values.map((value) => ({
-          url: `${baseUrl}/paises/${tipo}/${slugify(value)}`,
-          lastModified: new Date(),
-          changeFrequency: "monthly" as const,
-          priority: 0.65,
-        }));
-      })
-    )
-  ).flat();
-
-  const landingPages: MetadataRoute.Sitemap = [
-    {
-      url: `${baseUrl}/paises/sudamerica`,
-      lastModified: new Date(),
-      changeFrequency: "monthly",
-      priority: 0.75,
-    },
-  ];
-
-  return [
-    ...home,
-    ...regionPages,
-    ...categoryTypeHubs,
-    ...landingPages,
-    ...categoryPages,
-    ...countryPages,
-  ];
+  const seen = new Set<string>();
+  return urls.filter((item) => {
+    if (seen.has(item.url)) return false;
+    seen.add(item.url);
+    return true;
+  });
 }
