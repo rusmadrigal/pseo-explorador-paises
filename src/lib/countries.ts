@@ -2,6 +2,7 @@ export interface Country {
   name: string;
   officialName: string;
   slug: string;
+  cca3: string;
   capital: string;
   region: string;
   subregion: string;
@@ -32,10 +33,8 @@ export type CountryGroupType =
   | "continente"
   | "zona-horaria";
 
-const API_BASE = "https://restcountries.com/v3.1/all";
-const FIELDS_1 = "name,capital,region,subregion,population,area,languages,currencies,timezones,flag";
-const FIELDS_2 = "name,flags,coatOfArms,maps,borders,tld,idd,independent,unMember,landlocked";
-const FIELDS_3 = "name,continents,latlng,capitalInfo";
+const API_V5_BASE = "https://api.restcountries.com/countries/v5";
+const SNAPSHOT_PATH = "@/data/countries.json";
 
 function slugify(name: string): string {
   return name
@@ -46,93 +45,173 @@ function slugify(name: string): string {
     .replace(/(^-|-$)/g, "");
 }
 
-function parseCountry(raw: Record<string, unknown>): Country {
-  const name = (raw.name as Record<string, unknown>)?.common as string ?? "";
-  const officialName = (raw.name as Record<string, unknown>)?.official as string ?? name;
+let cachedCountries: Country[] | null = null;
 
-  const currenciesRaw = (raw.currencies ?? {}) as Record<string, { name: string; symbol: string }>;
-  const currencies = Object.values(currenciesRaw).map((c) => ({
-    name: c.name,
-    symbol: c.symbol ?? "",
+function isCountryArray(value: unknown): value is Record<string, unknown>[] {
+  return Array.isArray(value);
+}
+
+async function loadCountriesSnapshot(): Promise<Country[]> {
+  const snapshot = (await import(SNAPSHOT_PATH)).default as Country[];
+  return snapshot;
+}
+
+async function fetchCountriesV5(apiKey: string): Promise<Country[]> {
+  const responseFields = [
+    "names.common",
+    "names.official",
+    "region",
+    "subregion",
+    "population",
+    "area.kilometers",
+    "languages",
+    "currencies",
+    "timezones",
+    "flag.emoji",
+    "codes.alpha_2",
+    "codes.alpha_3",
+    "borders",
+    "tld",
+    "calling_codes",
+    "classification.sovereign",
+    "memberships.un",
+    "landlocked",
+    "coordinates.lat",
+    "coordinates.lng",
+    "capitals.name",
+  ].join(",");
+
+  const countries: Country[] = [];
+  let offset = 0;
+  const limit = 100;
+
+  while (true) {
+    const url = new URL(`${API_V5_BASE}`);
+    url.searchParams.set("limit", String(limit));
+    url.searchParams.set("offset", String(offset));
+    url.searchParams.set("response_fields", responseFields);
+
+    const res = await fetch(url, {
+      headers: { Authorization: `Bearer ${apiKey}` },
+    });
+
+    if (!res.ok) {
+      throw new Error(`Failed to fetch countries v5: ${res.status}`);
+    }
+
+    const payload = (await res.json()) as {
+      success?: boolean;
+      data?: Record<string, unknown>[] | null;
+      errors?: { message: string }[];
+    };
+
+    if (payload.success === false || !payload.data) {
+      const message =
+        payload.errors?.map((error) => error.message).join("; ") ??
+        "Unknown v5 API error";
+      throw new Error(message);
+    }
+
+    if (!isCountryArray(payload.data) || payload.data.length === 0) {
+      break;
+    }
+
+    countries.push(...payload.data.map(parseCountryV5));
+    if (payload.data.length < limit) break;
+    offset += limit;
+  }
+
+  return countries
+    .filter((country) => country.name && country.region)
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+function parseCountryV5(raw: Record<string, unknown>): Country {
+  const names = raw.names as Record<string, unknown> | undefined;
+  const name = (names?.common as string) ?? "";
+  const officialName = (names?.official as string) ?? name;
+  const codes = raw.codes as Record<string, string> | undefined;
+  const iso2 = codes?.alpha_2 ?? "";
+
+  const currenciesRaw = (raw.currencies ?? []) as {
+    name?: string;
+    symbol?: string;
+  }[];
+  const currencies = currenciesRaw.map((currency) => ({
+    name: currency.name ?? "",
+    symbol: currency.symbol ?? "",
   }));
 
-  const languagesRaw = (raw.languages ?? {}) as Record<string, string>;
-  const languages = Object.values(languagesRaw);
+  const languagesRaw = (raw.languages ?? []) as { name?: string }[];
+  const languages = languagesRaw.map((language) => language.name ?? "").filter(Boolean);
 
-  const idd = raw.idd as { root?: string; suffixes?: string[] } | undefined;
-  const callingCode = idd
-    ? `${idd.root ?? ""}${(idd.suffixes ?? [])[0] ?? ""}`
-    : "";
-
-  const flags = raw.flags as Record<string, string> | undefined;
-  const coatOfArms = raw.coatOfArms as Record<string, string> | undefined;
+  const flag = raw.flag as Record<string, string> | undefined;
+  const coordinates = raw.coordinates as { lat?: number; lng?: number } | undefined;
+  const area = raw.area as { kilometers?: number } | undefined;
+  const capitals = (raw.capitals ?? []) as { name?: string }[];
+  const classification = raw.classification as { sovereign?: boolean } | undefined;
+  const memberships = raw.memberships as { un?: boolean } | undefined;
+  const callingCodes = (raw.calling_codes ?? []) as string[];
+  const lat = coordinates?.lat ?? 0;
+  const lng = coordinates?.lng ?? 0;
+  const region = (raw.region as string) ?? "Unknown";
+  const subregion = (raw.subregion as string) ?? "";
 
   return {
     name,
     officialName,
     slug: slugify(name),
-    capital: ((raw.capitalInfo ? (raw.capital as string[]) : null) ?? ["N/A"])[0] ?? "N/A",
-    region: (raw.region as string) ?? "Unknown",
-    subregion: (raw.subregion as string) ?? "",
+    cca3: codes?.alpha_3 ?? "",
+    capital: capitals[0]?.name ?? "N/A",
+    region,
+    subregion,
     population: (raw.population as number) ?? 0,
-    area: (raw.area as number) ?? 0,
+    area: area?.kilometers ?? 0,
     languages,
     currencies,
     timezones: (raw.timezones as string[]) ?? [],
-    flag: (raw.flag as string) ?? "",
-    flagPng: flags?.png ?? "",
-    flagSvg: flags?.svg ?? "",
-    coatOfArms: coatOfArms?.svg ?? "",
-    maps: (raw.maps as Record<string, string>)?.googleMaps ?? "",
+    flag: flag?.emoji ?? "",
+    flagPng: iso2 ? `https://flagcdn.com/w320/${iso2.toLowerCase()}.png` : "",
+    flagSvg: iso2 ? `https://flagcdn.com/${iso2.toLowerCase()}.svg` : "",
+    coatOfArms: "",
+    maps: `https://www.google.com/maps/@${lat},${lng},5z`,
     borders: (raw.borders as string[]) ?? [],
-    tld: (raw.tld as string[]) ?? [],
-    callingCode,
-    independent: (raw.independent as boolean) ?? false,
-    unMember: (raw.unMember as boolean) ?? false,
+    tld: ((raw.tld as string[]) ?? []).map((entry) => entry.replace(/^\./, "")),
+    callingCode: callingCodes[0] ?? "",
+    independent: classification?.sovereign ?? false,
+    unMember: memberships?.un ?? false,
     landlocked: (raw.landlocked as boolean) ?? false,
-    continent: ((raw.continents as string[]) ?? ["Unknown"])[0],
-    latlng: (raw.latlng as [number, number]) ?? [0, 0],
+    continent: getContinentFromRegion(region, subregion),
+    latlng: [lat, lng],
   };
 }
 
-let cachedCountries: Country[] | null = null;
-
-async function fetchFields(fields: string): Promise<Record<string, unknown>[]> {
-  const res = await fetch(`${API_BASE}?fields=${fields}`);
-  if (!res.ok) throw new Error(`Failed to fetch countries (${fields}): ${res.status}`);
-  return (await res.json()) as Record<string, unknown>[];
+function getContinentFromRegion(region: string, subregion: string): string {
+  if (region === "Americas") {
+    return subregion === "South America" ? "South America" : "North America";
+  }
+  if (region === "Antarctic") return "Antarctica";
+  return region;
 }
 
 export async function getAllCountries(): Promise<Country[]> {
   if (cachedCountries) return cachedCountries;
 
-  const [batch1, batch2, batch3] = await Promise.all([
-    fetchFields(FIELDS_1),
-    fetchFields(FIELDS_2),
-    fetchFields(FIELDS_3),
-  ]);
+  const apiKey = process.env.RESTCOUNTRIES_API_KEY?.trim();
 
-  const map2 = new Map<string, Record<string, unknown>>();
-  for (const item of batch2) {
-    const name = (item.name as Record<string, unknown>)?.common as string;
-    if (name) map2.set(name, item);
-  }
-  const map3 = new Map<string, Record<string, unknown>>();
-  for (const item of batch3) {
-    const name = (item.name as Record<string, unknown>)?.common as string;
-    if (name) map3.set(name, item);
+  if (apiKey) {
+    try {
+      cachedCountries = await fetchCountriesV5(apiKey);
+      return cachedCountries;
+    } catch (error) {
+      console.warn(
+        "[countries] REST Countries v5 failed, using local snapshot:",
+        error instanceof Error ? error.message : error
+      );
+    }
   }
 
-  const merged = batch1.map((item) => {
-    const name = (item.name as Record<string, unknown>)?.common as string;
-    return { ...item, ...map2.get(name), ...map3.get(name) };
-  });
-
-  cachedCountries = merged
-    .map(parseCountry)
-    .filter((c) => c.name && c.region)
-    .sort((a, b) => a.name.localeCompare(b.name));
-
+  cachedCountries = await loadCountriesSnapshot();
   return cachedCountries;
 }
 
@@ -157,18 +236,8 @@ export async function getRegions(): Promise<string[]> {
 export async function getBorderCountries(country: Country): Promise<Country[]> {
   if (!country.borders.length) return [];
   const allCountries = await getAllCountries();
-
-  const res = await fetch(
-    `https://restcountries.com/v3.1/alpha?codes=${country.borders.join(",")}&fields=name`
-  );
-  if (!res.ok) return [];
-
-  const data = (await res.json()) as Record<string, unknown>[];
-  const borderSlugs = new Set(
-    data.map((d) => slugify((d.name as Record<string, unknown>)?.common as string ?? ""))
-  );
-
-  return allCountries.filter((c) => borderSlugs.has(c.slug));
+  const borderCodes = new Set(country.borders);
+  return allCountries.filter((candidate) => borderCodes.has(candidate.cca3));
 }
 
 function uniqueSorted(values: string[]): string[] {

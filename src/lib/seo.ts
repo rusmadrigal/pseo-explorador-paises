@@ -1,3 +1,4 @@
+import publishedAiIntros from "@/data/country-ai-intros.json";
 import {
   Country,
   CountryGroupType,
@@ -110,6 +111,9 @@ export function getCountryFacetIntro(
 }
 
 export function getCountryIntro(country: Country): string {
+  const published = publishedAiIntros[country.slug as keyof typeof publishedAiIntros];
+  if (published?.intro) return published.intro;
+
   const languages =
     country.languages.length > 0 ? country.languages.join(", ") : "varios idiomas";
 
