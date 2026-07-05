@@ -59,9 +59,21 @@ export interface PaginationPreview {
   relTags: string[];
 }
 
+export interface FacetUrlExample {
+  type: "facet" | "combinado";
+  label: string;
+  url: string;
+  seoAction: "index" | "noindex";
+  note: string;
+}
+
 export interface FacetAnalysis {
   countryFacetCount: number;
   facetUrls: { label: string; href: string }[];
+  urlExamples: {
+    facet: FacetUrlExample;
+    combined: FacetUrlExample;
+  };
   combinatorialRisk: "bajo" | "medio" | "alto";
   riskDetail: string;
   recommendations: string[];
@@ -257,6 +269,10 @@ export function buildPaginationPreview(
 export function analyzeFacetedNavigation(country: DemoCountry): FacetAnalysis {
   const shape = toCountryShape(country);
   const facets = getCountryFacets(shape);
+  const language = country.languages[0] ?? "English";
+  const currency = country.currencies[0]?.name ?? "moneda-local";
+  const facetHref = countryFacetPath(shape, "idioma", language);
+  const combinedHref = `${regionPath(country.region)}?idioma=${slugify(language)}&moneda=${slugify(currency)}&subregion=${slugify(country.subregion || "general")}`;
 
   const facetUrls = facets.slice(0, 6).map((facet) => ({
     label: `${facet.tipo}: ${facet.value}`,
@@ -280,6 +296,22 @@ export function analyzeFacetedNavigation(country: DemoCountry): FacetAnalysis {
   return {
     countryFacetCount: facetCount,
     facetUrls,
+    urlExamples: {
+      facet: {
+        type: "facet",
+        label: "Facet URL (un solo atributo)",
+        url: facetHref,
+        seoAction: "index",
+        note: "Ruta limpia, canonical self-referencing, enlazada desde country-detail.",
+      },
+      combined: {
+        type: "combinado",
+        label: "Filtro combinado (query params)",
+        url: combinedHref,
+        seoAction: "noindex",
+        note: "Mezcla idioma + moneda + subregión; riesgo de duplicados y explosión combinatoria.",
+      },
+    },
     combinatorialRisk,
     riskDetail,
     recommendations: [

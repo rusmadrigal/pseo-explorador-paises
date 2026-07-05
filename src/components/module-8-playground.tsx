@@ -458,6 +458,35 @@ function LivePanel({
         <p className="rounded-md border border-primary/30 bg-primary/5 p-3 text-xs">
           {facetAnalysis.riskDetail}
         </p>
+
+        <div className="rounded-md border border-primary/30 bg-primary/5 p-3">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-xs font-semibold text-primary">
+              {facetAnalysis.urlExamples.facet.label}
+            </p>
+            <Badge variant="secondary">index</Badge>
+          </div>
+          <p className="mt-1 font-mono text-xs">{facetAnalysis.urlExamples.facet.url}</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {facetAnalysis.urlExamples.facet.note}
+          </p>
+        </div>
+
+        <div className="rounded-md border border-destructive/30 bg-destructive/5 p-3">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-xs font-semibold text-destructive">
+              {facetAnalysis.urlExamples.combined.label}
+            </p>
+            <Badge variant="destructive">noindex</Badge>
+          </div>
+          <p className="mt-1 font-mono text-xs break-all">
+            {facetAnalysis.urlExamples.combined.url}
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {facetAnalysis.urlExamples.combined.note}
+          </p>
+        </div>
+
         {facetAnalysis.facetUrls.map((facet) => (
           <div key={facet.href} className="rounded-md border bg-muted/30 p-3">
             <p className="font-medium">{facet.label}</p>
@@ -693,14 +722,13 @@ function getLessonData(
     points: [
       `${ctx.facetAnalysis.countryFacetCount} facets para ${country.name}.`,
       `Riesgo combinatorio: ${ctx.facetAnalysis.combinatorialRisk}.`,
+      `✓ Indexar: ${ctx.facetAnalysis.urlExamples.facet.url}`,
+      `✗ Noindex: ${ctx.facetAnalysis.urlExamples.combined.url}`,
       ctx.facetAnalysis.riskDetail,
-      "Indexar solo facets con demanda; noindex en combinaciones arbitrarias de filtros.",
     ],
     exercise:
-      "Actividad: busca un país con muchas zonas horarias y evalúa si todas sus facet URLs deberían indexarse.",
-    code: ctx.facetAnalysis.facetUrls
-      .map((facet) => `${facet.label}\n→ ${facet.href}`)
-      .join("\n\n"),
+      "Actividad: compara las dos URLs del panel. ¿Por qué la facet URL sí indexa y la combinada no?",
+    code: `// ✅ Facet URL (index)\n${ctx.facetAnalysis.urlExamples.facet.url}\n// ${ctx.facetAnalysis.urlExamples.facet.note}\n\n// ❌ Filtro combinado (noindex)\n${ctx.facetAnalysis.urlExamples.combined.url}\n// ${ctx.facetAnalysis.urlExamples.combined.note}`,
     sources: [
       "src/lib/countries.ts (getCountryFacets)",
       "src/lib/paths.ts (countryFacetPath)",
