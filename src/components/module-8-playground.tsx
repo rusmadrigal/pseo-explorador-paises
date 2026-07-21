@@ -142,7 +142,11 @@ export function Module8Playground({
           ciclo con{" "}
           <strong className="text-foreground">Technical SEO</strong>: cómo hacer
           que Google descubra, rastree e indexe cientos de URLs sin desperdiciar
-          crawl budget ni generar duplicados.
+          crawl budget ni generar duplicados. El cierre del curso continúa en el{" "}
+          <a href="/modulo-9" className="underline underline-offset-2">
+            Módulo 9
+          </a>
+          .
         </CardContent>
       </Card>
 
